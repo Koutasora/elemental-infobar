@@ -3,7 +3,7 @@
   "SDKVersion": 3,
   "UUID": "com.elemental.infobar",
   "Name": "Elemental Infobar",
-  "Version": "1.0.3.0",
+  "Version": "1.1.0.0",
   "Author": "Rafał",
   "Description": "Clock, world clocks, system readings, progress and more for the Stream Deck Neo infobar, with themes and your own language.",
   "Icon": "imgs/plugin-icon",
@@ -17,6 +17,10 @@
     {
       "Platform": "windows",
       "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
     }
   ],
   "Software": {

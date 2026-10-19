@@ -4,6 +4,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { freemem, totalmem } from "node:os";
+import { macCpu, macGpu, macRam, macStatus } from "./sensors-mac";
+
+const MAC = process.platform === "darwin";
 
 const run = promisify(execFile);
 
@@ -32,6 +35,7 @@ export async function readDisk(index = 0): Promise<Reading | null> {
 
 /** RAM: zajętość w % (`temp`) prosto z systemu, bez HWiNFO; `name` = "użyte / razem GB". */
 export function readRam(): Reading {
+	if (MAC) return macRam();
 	const total = totalmem();
 	const used = total - freemem();
 	return { temp: (used / total) * 100, name: `${(used / 1024 ** 3).toFixed(1)} / ${(total / 1024 ** 3).toFixed(0)} GB`, source: "os" };
@@ -42,6 +46,7 @@ const INTEGRATED = /radeon\(tm\) graphics|radeon graphics|\bvega\b.*graphics|int
 /** GPU: HWiNFO pamięć współdzielona (karty po nazwie czujnika "GPU [#N]" / "iGPU [#N]" / "dGPU [#N]").
  *  Pasek ma jedno pole GPU: pierwsza karta dedykowana z temperaturą, a gdy jej brak (np. uśpiona w laptopie) – zintegrowana. */
 export async function readGpu(): Promise<Reading | null> {
+	if (MAC) return macGpu();
 	ensureShm();
 	if (Date.now() - shmLast.at >= 8000) return null;
 	const cards = [...shmLast.gpus.entries()].sort((a, b) => a[0] - b[0]).map(([, r]) => r);
@@ -50,12 +55,13 @@ export async function readGpu(): Promise<Reading | null> {
 
 /** CPU: HWiNFO pamięć współdzielona -> HWiNFO rejestr ("Report value in Gadget") -> LibreHardwareMonitor (HTTP). */
 export async function readCpu(): Promise<Reading | null> {
+	if (MAC) return macCpu();
 	return readCpuShm() ?? (await readCpuHwinfo()) ?? (await readCpuLhm());
 }
 
 // --- HWiNFO shared memory: jeden długo działający proces PowerShell, jedna linia JSON na 2 s ---
 let shmProc: ChildProcess | undefined;
-export type ShmStatus = "ok" | "notrunning" | "disabled" | "unknown";
+export type ShmStatus = "ok" | "notrunning" | "disabled" | "nomacmon" | "unknown";
 let shmLast: { cpu: Reading | null; gpus: Map<number, Reading>; disks: Map<number, Reading>; status: ShmStatus; at: number } = { cpu: null, gpus: new Map(), disks: new Map(), status: "unknown", at: 0 };
 let shmStartedAt = 0;
 
@@ -90,6 +96,7 @@ function readCpuShm(): Reading | null {
 
 /** Stan źródła HWiNFO – do komunikatu na klawiszu, gdy brak danych. */
 export function shmStatus(): ShmStatus {
+	if (MAC) return macStatus();
 	return Date.now() - shmLast.at < 8000 ? shmLast.status : "unknown";
 }
 

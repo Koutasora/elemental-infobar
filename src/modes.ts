@@ -36,7 +36,8 @@ let bundledId: string | null = null; // czcionka dołączona do pluginu (rysowan
 
 /** Ustawia czcionkę na czas jednego renderowania (render jest synchroniczny). Nieznana nazwa (np. stare ustawienie) = Segoe UI. */
 function useFont(s: Settings): void {
-	const name = s.font ?? "Segoe UI";
+	let name = s.font ?? "Segoe UI";
+	if (process.platform === "darwin" && (name === "Segoe UI" || name === "Bahnschrift")) name = "Arial"; // na Macu nie ma tych czcionek
 	const bundled = findBundled(name);
 	bundledId = bundled ?? null;
 	if (bundled) {
@@ -180,9 +181,9 @@ function sensorRows(c: Ctx): Row[] {
 	const f = (v: number) => Math.round(s.unit === "F" ? (v * 9) / 5 + 32 : v);
 	const rows: Row[] = [];
 	const wantsHw = s.showCpu !== false || s.showGpu !== false;
-	const hwDown = (c.sensors.status === "disabled" || c.sensors.status === "notrunning") && !c.sensors.cpu && !c.sensors.gpu;
+	const hwDown = (c.sensors.status === "disabled" || c.sensors.status === "notrunning" || c.sensors.status === "nomacmon") && !c.sensors.cpu && !c.sensors.gpu;
 	if (wantsHw && hwDown) {
-		rows.push({ msg: c.sensors.status === "notrunning" ? ["Start HWiNFO"] : ["Enable HWiNFO", "Shared Memory"] });
+		rows.push({ msg: c.sensors.status === "nomacmon" ? ["Install macmon"] : c.sensors.status === "notrunning" ? ["Start HWiNFO"] : ["Enable HWiNFO", "Shared Memory"] });
 	} else {
 		const temp = (label: string, v: Val, warn: number, crit: number): Row =>
 			v ? { label, text: `${f(v.temp)}°${s.unit === "F" ? "F" : "C"}`, frac: (v.temp - 20) / 80, color: autoColor(v.temp, warn, crit) } : { label, text: "--", frac: 0, color: t.dim };

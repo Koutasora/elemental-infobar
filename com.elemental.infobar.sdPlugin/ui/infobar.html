@@ -31,6 +31,13 @@
 				progress: "Pokaż", pDay: "Dzień", pWeek: "Tydzień", pMonth: "Miesiąc", pYear: "Rok",
 			},
 		};
+		// On a Mac the CPU / GPU readings come from macmon instead of HWiNFO
+		if (/Mac/i.test(navigator.platform || navigator.userAgent || "")) {
+			var L = SDPIComponents.i18n.locales;
+			L.en.hwinfo = L.pl.hwinfo = "macOS";
+			L.en.hwinfoNote = "On a Mac, CPU and GPU readings come from the free tool macmon (Apple Silicon): install it with “brew install macmon”. RAM usage works without it.";
+			L.pl.hwinfoNote = "Na Macu odczyty CPU i GPU pochodzą z darmowego narzędzia macmon (Apple Silicon): zainstaluj je poleceniem „brew install macmon”. Zajętość RAM działa bez niego.";
+		}
 		var langChoice = "auto";
 		try { langChoice = localStorage.getItem("elementalLang") || "auto"; } catch (e) {}
 		SDPIComponents.i18n.language = langChoice === "auto" ? (SDPIComponents.i18n.locales[SDPIComponents.i18n.language] ? SDPIComponents.i18n.language : "en") : langChoice;
